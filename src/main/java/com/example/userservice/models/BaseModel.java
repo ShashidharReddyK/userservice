@@ -18,6 +18,6 @@ public class BaseModel {
     private Long id;
     private Date createdAt;
     private Date updatedAt;
-    private boolean isDeleted;
+    private boolean deleted = false;
 
 }

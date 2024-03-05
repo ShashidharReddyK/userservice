@@ -1,12 +1,15 @@
 package com.example.userservice.controllers;
 
-import com.example.userservice.dtos.ExceptionDto;
+import com.example.userservice.dtos.*;
 import com.example.userservice.exceptions.IncorrectUserCredentials;
 import com.example.userservice.exceptions.UserNotFound;
+import com.example.userservice.models.Token;
 import com.example.userservice.models.User;
 import com.example.userservice.services.SelfUserService;
 import com.example.userservice.services.UserService;
+import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,43 +23,33 @@ public class UserController {
     private UserService userService;
 
     @Autowired
-    public UserController(UserService userService){
+    public UserController(@Qualifier("selfUserService") UserService userService){
         this.userService = userService;
     }
 
-    @GetMapping("/all")
-    public List<User> getAllUsers(){
-        return userService.getAllUsers();
+    @PostMapping("/signup")
+    public UserDto signup(@RequestBody SignupDto signupDto){
+        String userName = signupDto.getUserName();
+        String email = signupDto.getEmail();
+        String password = signupDto.getPassword();
+        return UserDto.from(userService.signup(userName, email, password));
     }
 
-    @GetMapping("/user-{id}")
-    public ResponseEntity<User> getUserByIdResponse(@PathVariable("id") Long id) throws UserNotFound {
-        return new ResponseEntity<User>(
-                userService.getUser(id),
-                HttpStatus.OK);
-    }
-
-    @PostMapping("/add")
-    public User addUser(@RequestBody User user){
-        return userService.addUser(user);
-    }
-
-    @PatchMapping("/patch-{id}")
-    public User updateUser(@PathVariable("id") Long id,@RequestBody User user) throws UserNotFound {
-        return userService.updateUser(id, user);
-    }
-
-    @DeleteMapping("/delete-{id}")
-    public Long deleteUser(@PathVariable("id") Long id){
-        return userService.deleteUser(id);
-    }
-
-    @GetMapping("/login-{username}-{password}")
-    public ResponseEntity<User> login(@PathVariable("username") String username, @PathVariable("password") String password)
+    @PostMapping("/login")
+    public ResponseEntity<Token> login(@RequestBody LoginRequestDto request)
     throws IncorrectUserCredentials{
-        return new ResponseEntity<User>(
-                userService.login(username, password),
-                HttpStatus.OK);
+        return new ResponseEntity<Token>(userService.login(request.getEmail(), request.getPassword()), HttpStatus.OK);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestBody LogoutRequestDto request){
+        userService.logout(request.getToken());
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PostMapping("validate/{token}")
+    public UserDto validateToken(@PathVariable("token") @NonNull String token){
+        return UserDto.from(userService.validateToken(token));
     }
 
     @ExceptionHandler(UserNotFound.class)
