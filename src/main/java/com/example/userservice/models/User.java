@@ -15,7 +15,7 @@ public class User extends BaseModel{
     private String userName;
     private String hashedPassword;
     private String email;
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     private List<Role> roles;
     private String phone;
     private boolean isEmailVerified;
